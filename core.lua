@@ -264,8 +264,8 @@ function RCLootCouncil:OnEnable()
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEvent")
 	self:RegisterEvent("PLAYER_REGEN_DISABLED", "EnterCombat")
 	self:RegisterEvent("PLAYER_REGEN_ENABLED", "LeaveCombat")
-	self:RegisterEvent("CHAT_MSG_SYSTEM", "CheckGuildUpdate")
-	--self:RegisterEvent("GROUP_ROSTER_UPDATE", "Debug", "event")
+       self:RegisterEvent("CHAT_MSG_SYSTEM", "CheckGuildUpdate")
+       self:RegisterEvent("GROUP_ROSTER_UPDATE", "OnGroupRosterUpdate")
 
 	if IsInGuild() then
 		self.guildRank = select(2, GetGuildInfo("player"))
@@ -1254,13 +1254,23 @@ function RCLootCouncil:OnEvent(event, ...)
 		end
 		player_relogged = false
 
-	elseif event == "GUILD_ROSTER_UPDATE" then
-		self.guildRank = self:GetPlayersGuildRank();
-		if unregisterGuildEvent then
-			self:UnregisterEvent("GUILD_ROSTER_UPDATE"); -- we don't need it any more
-			self:GetGuildOptions() -- get the guild data to the options table now that it's ready
-		end
-	end
+        elseif event == "GUILD_ROSTER_UPDATE" then
+               self.guildRank = self:GetPlayersGuildRank();
+               if unregisterGuildEvent then
+                       self:UnregisterEvent("GUILD_ROSTER_UPDATE"); -- we don't need it any more
+                       self:GetGuildOptions() -- get the guild data to the options table now that it's ready
+               end
+       end
+end
+
+function RCLootCouncil:OnGroupRosterUpdate()
+       local num = GetNumGroupMembers() or 0
+       for i = 1, num do
+               local name, _, _, _, class = GetRaidRosterInfo(i)
+               if name then
+                       AddOrUpdatePlayer(name, class)
+               end
+       end
 end
 
 function RCLootCouncil:NewMLCheck()
@@ -1643,3 +1653,11 @@ function printtable( data, level )
 	until true end
 end
 --@end-debug@
+
+-- Simple slash command to open the options frame
+SLASH_SCROOGELOOTAGAIN1 = "/sl"
+SlashCmdList["SCROOGELOOTAGAIN"] = function()
+       if RCLootCouncil and RCLootCouncil.optionsFrame then
+               InterfaceOptionsFrame_OpenToCategory(RCLootCouncil.optionsFrame)
+       end
+end
