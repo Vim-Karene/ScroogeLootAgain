@@ -423,9 +423,13 @@ function ScroogeLoot:GetCouncilInGroup()
 	elseif self.isCouncil then -- When we're alone
 		tinsert(council, self.playerName)
 	end
-	if #council == 0 and self.masterLooter then -- We can't have empty council
-		tinsert(council, self.masterLooter)
-	end
+       -- Always include the master looter if available
+       if self.masterLooter and not tContains(council, self.masterLooter) then
+               tinsert(council, self.masterLooter)
+       end
+       if #council == 0 and self.masterLooter then -- We can't have empty council
+               tinsert(council, self.masterLooter)
+       end
 	self:DebugLog("GetCouncilInGroup", unpack(council))
 	return council
 end
