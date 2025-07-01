@@ -33,14 +33,12 @@ function SLVotingFrame:OnInitialize()
 		{ name = L["Name"],														sortnext = 4,		width = 80},	-- 2 Candidate Name
 		{ name = L["Rank"],		comparesort = GuildRankSort,					sortnext = 4,		width = 95},	-- 3 Guild rank
 		{ name = L["Response"],	comparesort = ResponseSort,						sortnext = 6,		width = 240},	-- 4 Response
-		{ name = L["ilvl"],														sortnext = 9,		width = 40},	-- 5 Total ilvl
-		{ name = L["Diff"],														sortnext = 5,		width = 40},	-- 6 ilvl difference
-		{ name = L["g1"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 7 Current gear 1
-		{ name = L["g2"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 8 Current gear 2
-		{ name = L["Votes"], 		align = "CENTER",												width = 40},	-- 9 Number of votes
-		{ name = L["Vote"],			align = "CENTER",							sortnext = 4,		width = 60},	-- 10 Vote button
-		{ name = L["Notes"],		align = "CENTER",												width = 40},	-- 11 Note icon
-		{ name = L["Roll"],			align = "CENTER", 							sortnext = 4,		width = 30},	-- 12 Roll
+		{ name = L["g1"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 5 Current gear 1
+		{ name = L["g2"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 6 Current gear 2
+		{ name = L["Votes"], 		align = "CENTER",												width = 40},	-- 7 Number of votes
+		{ name = L["Vote"],			align = "CENTER",							sortnext = 4,		width = 60},	-- 8 Vote button
+		{ name = L["Notes"],		align = "CENTER",												width = 40},	-- 9 Note icon
+		{ name = L["Roll"],			align = "CENTER", 							sortnext = 4,		width = 30},	-- 10 Roll
 	}
 	menuFrame = CreateFrame("Frame", "ScroogeLoot_VotingFrame_RightclickMenu", UIParent, "Lib_UIDropDownMenuTemplate")
 	filterMenu = CreateFrame("Frame", "ScroogeLoot_VotingFrame_FilterMenu", UIParent, "Lib_UIDropDownMenuTemplate")
@@ -324,7 +322,6 @@ function SLVotingFrame:SwitchSession(s)
 	self.frame.itemIcon:SetNormalTexture(t.texture)
 	self.frame.itemText:SetText(t.link)
 	self.frame.iState:SetText(self:GetItemStatus(t.link))
-	self.frame.itemLvl:SetText(format(L["ilvl: x"], t.ilvl))
 	-- Set a proper item type text
 	if t.subType and t.subType ~= "Miscellaneous" and t.subType ~= "Junk" and t.equipLoc ~= "" then
 		self.frame.itemType:SetText(getglobal(t.equipLoc)..", "..t.subType); -- getGlobal to translate from global constant to localized name
@@ -342,7 +339,7 @@ function SLVotingFrame:SwitchSession(s)
 	for i in ipairs(self.frame.st.cols) do
 		self.frame.st.cols[i].sort = nil
 	end
-	self.frame.st.cols[5].sort = "asc"
+	self.frame.st.cols[4].sort = "asc"
 	FauxScrollFrame_OnVerticalScroll(self.frame.st.scrollframe, 0, self.frame.st.rowHeight, function() self.frame.st:Refresh() end) -- Reset scrolling to 0
 	self:Update()
 	self:UpdatePeopleToVote()
@@ -359,8 +356,6 @@ function SLVotingFrame:BuildST()
 				{ value = "",	DoCellUpdate = self.SetCellName,			name = "name",},
 				{ value = "",	DoCellUpdate = self.SetCellRank,			name = "rank",},
 				{ value = "",	DoCellUpdate = self.SetCellResponse,	name = "response",},
-				{ value = "",	DoCellUpdate = self.SetCellIlvl,			name = "ilvl",},
-				{ value = "",	DoCellUpdate = self.SetCellDiff,			name = "diff",},
 				{ value = "",	DoCellUpdate = self.SetCellGear, 		name = "gear1",},
 				{ value = "",	DoCellUpdate = self.SetCellGear, 		name = "gear2",},
 				{ value = 0,	DoCellUpdate = self.SetCellVotes, 		name = "votes",},
@@ -530,20 +525,15 @@ function SLVotingFrame:GetFrame()
 	iTxt:SetText(L["Something went wrong :'("]) -- Set text for reasons
 	f.itemText = iTxt
 
-	local ilvl = f.content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	ilvl:SetPoint("TOPLEFT", iTxt, "BOTTOMLEFT", 0, -4)
-	ilvl:SetTextColor(1, 1, 1) -- White
-	ilvl:SetText("")
-	f.itemLvl = ilvl
 
 	local iState = f.content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	iState:SetPoint("LEFT", ilvl, "RIGHT", 5, 0)
+	iState:SetPoint("LEFT", iTxt, "RIGHT", 5, 0)
 	iState:SetTextColor(0,1,0,1) -- Green
 	iState:SetText("")
 	f.iState = iState
 
 	local iType = f.content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	iType:SetPoint("TOPLEFT", ilvl, "BOTTOMLEFT", 0, -4)
+	iType:SetPoint("TOPLEFT", iTxt, "BOTTOMLEFT", 0, -4)
 	iType:SetTextColor(0.5, 1, 1) -- Turqouise
 	iType:SetText("")
 	f.itemType = iType
@@ -720,13 +710,6 @@ end
 ----------------------------------------------------------
 --	Lib-st data functions (not particular pretty, I know)
 ----------------------------------------------------------
-function SLVotingFrame:GetDiffColor(num)
-	if num == "" then num = 0 end -- Can't compare empty string
-	local green, red, grey = {0,1,0,1},{1,0,0,1},{0.75,0.75,0.75,1}
-	if num > 0 then return green end
-	if num < 0 then return red end
-	return grey
-end
 
 function SLVotingFrame.SetCellClass(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
 	local name = data[realrow].name
@@ -754,18 +737,6 @@ function SLVotingFrame.SetCellResponse(rowFrame, frame, data, cols, row, realrow
 	frame.text:SetTextColor(addon:GetResponseColor(lootTable[session].candidates[name].response))
 end
 
-function SLVotingFrame.SetCellIlvl(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
-	frame.text:SetText(lootTable[session].candidates[name].ilvl)
-	data[realrow].cols[column].value = lootTable[session].candidates[name].ilvl
-end
-
-function SLVotingFrame.SetCellDiff(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
-	frame.text:SetText(lootTable[session].candidates[name].diff)
-	frame.text:SetTextColor(unpack(SLVotingFrame:GetDiffColor(lootTable[session].candidates[name].diff)))
-	data[realrow].cols[column].value = lootTable[session].candidates[name].diff
-end
 
 function SLVotingFrame.SetCellGear(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
 	local gear = data[realrow].cols[column].name -- gear1 or gear2
