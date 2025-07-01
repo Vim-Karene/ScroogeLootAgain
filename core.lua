@@ -564,9 +564,13 @@ function ScroogeLoot:SendCommand(target, command, ...)
 			self:SendCommMessage("ScroogeLoot", toSend, "PARTY", nil, prio)
 		--[[elseif num > 0 then -- Party
 			self:SendCommMessage("ScroogeLoot", toSend, "PARTY")]]
-		else--if self.testMode then -- Alone (testing)
-			self:SendCommMessage("ScroogeLoot", toSend, "WHISPER", self.playerName, prio)
-		end
+               else--if self.testMode then -- Alone (testing)
+                       -- Some clients won't receive WHISPER messages sent to
+                       -- yourself, so invoke the handler directly to ensure
+                       -- local communication works during tests.
+                       self:SendCommMessage("ScroogeLoot", toSend, "WHISPER", self.playerName, prio)
+                       self:OnCommReceived("ScroogeLoot", toSend, "WHISPER", self.playerName)
+               end
 
 	elseif target == "guild" then
 		self:SendCommMessage("ScroogeLoot", toSend, "GUILD")
