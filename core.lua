@@ -124,7 +124,7 @@ function ScroogeLoot:OnInitialize()
 			selfVote = true,
 			multiVote = true,
 			anonymousVoting = false,
-			showForML = false,
+                       showForML = true,
 			hideVotes = false, -- Hide the # votes until one have voted
 			allowNotes = true,
 			autoAward = false,
