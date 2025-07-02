@@ -1118,8 +1118,8 @@ end
 -- @param equipLoc	The item in the session's equipLoc
 -- @param note			The player's note
 -- @returns A formatted table that can be passed directly to :SendCommand("group", "response", -return-)
-function ScroogeLoot:CreateResponse(session, link, ilvl, response, equipLoc, note)
-	self:DebugLog("CreateResponse", session, link, ilvl, response, equipLoc, note)
+function ScroogeLoot:CreateResponse(session, link, ilvl, response, equipLoc, note, roll)
+    self:DebugLog("CreateResponse", session, link, ilvl, response, equipLoc, note, roll)
 	local g1, g2 = self:GetPlayersGear(link, equipLoc)
 	local diff = nil
 	if g1 then 
@@ -1149,7 +1149,8 @@ function ScroogeLoot:CreateResponse(session, link, ilvl, response, equipLoc, not
 			ilvl = ilvl,
 			diff = diff,
 			note = note,
-			response = response
+			response = response,
+			roll = roll
 		}
 end
 
