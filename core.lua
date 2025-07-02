@@ -1257,9 +1257,11 @@ function RCLootCouncil:OnEvent(event, ...)
 			self:ScheduleTimer("SendCommand", 2, self.masterLooter, "reconnect")
 			self:SendCommand(self.masterLooter, "playerInfo", self:GetPlayerInfo()) -- Also send out info, just in case
 		end
-		player_relogged = false
+               player_relogged = false
+               -- Ensure all raid members exist in PlayerData when zoning or logging in
+               self:OnGroupRosterUpdate()
 
-        elseif event == "GUILD_ROSTER_UPDATE" then
+       elseif event == "GUILD_ROSTER_UPDATE" then
                self.guildRank = self:GetPlayersGuildRank();
                if unregisterGuildEvent then
                        self:UnregisterEvent("GUILD_ROSTER_UPDATE"); -- we don't need it any more
