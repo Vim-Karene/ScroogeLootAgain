@@ -221,8 +221,9 @@ function RCLootCouncil:OnInitialize()
 	-- register chat and comms
 	self:RegisterChatCommand("rc", "ChatCommand")
   	self:RegisterChatCommand("rclc", "ChatCommand")
-	self:RegisterComm("RCLootCouncil")
-	self:RegisterComm("RCLootCouncil_WotLK")
+        self:RegisterComm("RCLootCouncil")
+        self:RegisterComm("RCLootCouncil_WotLK")
+        self:RegisterComm("PlayerDataUpdate")
 	self.db = LibStub("AceDB-3.0"):New("RCLootCouncilDB", self.defaults, true)
 	self.lootDB = LibStub("AceDB-3.0"):New("RCLootCouncilLootDB")
 	--[[ Format:
@@ -603,11 +604,15 @@ end
 -- To ensure correct handling of x-realm commands, include this line aswell:
 -- -- if RCLootCouncil:HandleXRealmComms(self, command, data, sender) then return end
 function RCLootCouncil:OnCommReceived(prefix, serializedMsg, distri, sender)
-	if prefix == "RCLootCouncil" then
-		-- data is always a table to be unpacked
-		local decoded = Deflate:DecodeForPrint(serializedMsg)
-		if not decoded then 
-			return -- probably an old version or somehow a bad message idk just throw this away
+        if prefix == "PlayerDataUpdate" and not self.isMasterLooter then
+                local ok, data = AceSerializer:Deserialize(serializedMsg)
+                if ok then PlayerData = data end
+                return
+        elseif prefix == "RCLootCouncil" then
+                -- data is always a table to be unpacked
+                local decoded = Deflate:DecodeForPrint(serializedMsg)
+                if not decoded then
+                        return -- probably an old version or somehow a bad message idk just throw this away
 		end 
 		local decompressed = Deflate:DecompressDeflate(decoded)
 		local test, command, data = self:Deserialize(decompressed)

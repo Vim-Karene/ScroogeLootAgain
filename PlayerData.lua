@@ -66,7 +66,7 @@ function RaidDayReward()
 end
 
 function BroadcastPlayerData()
-    if CanEditPlayerData() and AceSerializer then
+    if addon.isMasterLooter then
         local serialized = AceSerializer:Serialize(PlayerData)
         SendAddonMessage("PlayerDataUpdate", serialized, "RAID")
     end
