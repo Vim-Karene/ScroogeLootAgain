@@ -16,6 +16,33 @@ local ENTRY_HEIGHT = 75
 local MAX_ENTRIES = 5
 local numRolled = 0
 
+local ROLL_BUTTONS = {
+    { id = 1, name = "Scrooge", displayName = "SCROOGE Roll", priority = 1 },
+    { id = 2, name = "Drool", displayName = "DROOL Roll", priority = 1 },
+    { id = 3, name = "Deducktion", displayName = "DEDUCKTION Roll", priority = 2 },
+    { id = 4, name = "Main-Spec", displayName = "Main-Spec Roll", priority = 3 },
+    { id = 5, name = "Off-Spec", displayName = "Off-Spec Roll", priority = 4 },
+    { id = 6, name = "Transmog", displayName = "Transmog Roll", priority = 5 },
+    { id = 7, name = "Pass", displayName = "Pass", priority = 99 },
+}
+
+local function CanClick(buttonId, itemLink)
+    local pdata = PlayerData[addon.playerName] or {}
+    local itemName = GetItemInfo(itemLink)
+    if buttonId == 1 or buttonId == 2 then
+        if not (pdata.isRaider and itemName and pdata.tokenItems and pdata.tokenItems[itemName]) then return false end
+        if pdata.itemHistory and pdata.itemHistory[itemName] then return false end
+        return true
+    elseif buttonId == 3 then
+        return pdata.isRaider and addon:CanUseItem(addon.playerName, itemLink)
+    elseif buttonId == 4 or buttonId == 5 or buttonId == 6 then
+        return addon:CanUseItem(addon.playerName, itemLink)
+    elseif buttonId == 7 then
+        return true
+    end
+    return true
+end
+
 function LootFrame:Start(table)
 	addon:DebugLog("LootFrame:Start()")
 	for k = 1, #table do
@@ -156,18 +183,19 @@ function LootFrame:Update()
 
 			-- Update the buttons and get frame width
 			-- IDEA There might be a better way of doing this instead of SetText() on every update?
-			local but = entries[numEntries].buttons[addon.mldb.numButtons+1]
-			but:SetWidth(but:GetTextWidth() + 10)
-			width = width + but:GetWidth()
-			for i = 1, addon.mldb.numButtons do
-				but = entries[numEntries].buttons[i]
-				but:SetText(addon:GetButtonText(i))
-				but:SetWidth(but:GetTextWidth() + 10)
-				width = width + but:GetWidth()
-			end
-			entries[numEntries]:SetWidth(width)
-			entries[numEntries]:Show()
-		end
+                        local but
+                        for i, info in ipairs(ROLL_BUTTONS) do
+                                but = entries[numEntries].buttons[i]
+                                if but then
+                                        but:SetText(info.displayName)
+                                        but:SetEnabled(CanClick(i, v.link))
+                                        but:SetWidth(but:GetTextWidth() + 10)
+                                        width = width + but:GetWidth()
+                                end
+                        end
+                        entries[numEntries]:SetWidth(width)
+                        entries[numEntries]:Show()
+                end
 	end
 	self.frame:SetHeight(numEntries * ENTRY_HEIGHT)
 	self.frame:SetWidth(width)
@@ -180,11 +208,42 @@ function LootFrame:Update()
 end
 
 function LootFrame:OnRoll(entry, button)
-    addon:Debug("LootFrame:OnRoll", entry, button, "Response:", addon:GetResponseText(button))
+    addon:Debug("LootFrame:OnRoll", entry, button)
     local index = entries[entry].realID
+    local player = addon.playerName
+    local pdata = PlayerData[player] or {}
+    local itemName = GetItemInfo(items[index].link)
 
-    -- Generate a random roll when the player selects a response
-    local roll = math.random(100)
+    local baseRoll = math.random(100)
+    local sp = 0
+    local dp = 0
+
+    local function disable()
+        return
+    end
+
+    if button == 1 then -- Scrooge
+        if not (pdata.isRaider and itemName and pdata.tokenItems and pdata.tokenItems[itemName] and not (pdata.itemHistory and pdata.itemHistory[itemName])) then return disable() end
+        sp = pdata.SP or 0
+        pdata.SP = (pdata.SP or 0) + 20
+    elseif button == 2 then -- Drool
+        if not (pdata.isRaider and itemName and pdata.tokenItems and pdata.tokenItems[itemName] and not (pdata.itemHistory and pdata.itemHistory[itemName])) then return disable() end
+    elseif button == 3 then -- Deducktion
+        if not (pdata.isRaider and addon:CanUseItem(player, items[index].link)) then return disable() end
+        dp = pdata.DP or 0
+    elseif button == 4 or button == 5 then -- Main/Off spec
+        if not addon:CanUseItem(player, items[index].link) then return disable() end
+        dp = pdata.DP or 0
+    elseif button == 6 then -- Transmog
+        if not addon:CanUseItem(player, items[index].link) then return disable() end
+    elseif button == 7 then -- Pass
+        numRolled = numRolled + 1
+        items[index].rolled = true
+        self:Update()
+        return
+    end
+
+    local roll = baseRoll + sp - dp
 
     addon:SendCommand(
         "group",
@@ -196,9 +255,17 @@ function LootFrame:OnRoll(entry, button)
             button,
             items[index].equipLoc,
             items[index].note,
-            roll
+            roll,
+            sp,
+            dp,
+            baseRoll
         )
     )
+
+    if SLVotingFrame and SLVotingFrame.HandleVote then
+        SLVotingFrame:HandleVote(items[index].session, player, 1, player)
+        SLVotingFrame:Update()
+    end
 
     numRolled = numRolled + 1
     items[index].rolled = true
@@ -251,20 +318,16 @@ function LootFrame:GetEntry(entry)
 	f.icon = icon
 
 	-------- Buttons -------------
-	f.buttons = {}
-	for i = 1, addon.mldb.numButtons do
-		f.buttons[i] = addon:CreateButton(addon:GetButtonText(i), f)
-		if i == 1 then
-			f.buttons[i]:SetPoint("BOTTOMLEFT", icon, "BOTTOMRIGHT", 5, 0)
-		else
-			f.buttons[i]:SetPoint("LEFT", f.buttons[i-1], "RIGHT", 5, 0)
-		end
-		f.buttons[i]:SetScript("OnClick", function() LootFrame:OnRoll(entry, i) end)
-	end
-	-- Pass button
-	f.buttons[addon.mldb.numButtons + 1] = addon:CreateButton(L["Pass"], f)
-	f.buttons[addon.mldb.numButtons + 1]:SetPoint("LEFT", f.buttons[addon.mldb.numButtons], "RIGHT", 5, 0)
-	f.buttons[addon.mldb.numButtons + 1]:SetScript("OnClick", function() LootFrame:OnRoll(entry, "PASS") end)
+        f.buttons = {}
+        for i, info in ipairs(ROLL_BUTTONS) do
+                f.buttons[i] = addon:CreateButton(info.displayName, f)
+                if i == 1 then
+                        f.buttons[i]:SetPoint("BOTTOMLEFT", icon, "BOTTOMRIGHT", 5, 0)
+                else
+                        f.buttons[i]:SetPoint("LEFT", f.buttons[i-1], "RIGHT", 5, 0)
+                end
+                f.buttons[i]:SetScript("OnClick", function() LootFrame:OnRoll(entry, i) end)
+        end
 
 	-------- Note button ---------
 	local noteButton = CreateFrame("Button", nil, f)

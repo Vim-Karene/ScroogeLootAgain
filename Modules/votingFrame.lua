@@ -395,8 +395,12 @@ function SLVotingFrame:UpdateMoreInfo(row, data)
 		nameCheck = true
 	end
 
-	tip:AddLine(name, color.r, color.g, color.b)
-	color = {} -- Color of the response
+        tip:AddLine(name, color.r, color.g, color.b)
+        local cData = lootTable[session].candidates[name]
+        if cData.roll and cData.baseRoll then
+                tip:AddLine(string.format("Final Roll = Base Roll (%d) + SP (%d) - DP (%d) = %d", cData.baseRoll, cData.sp or 0, cData.dp or 0, cData.roll))
+        end
+        color = {} -- Color of the response
 	if nameCheck and #lootDB[name] > 0 then -- they're in the DB!
 		tip:AddLine("")
 		local nonMainspecEntries = {}
@@ -845,9 +849,17 @@ function SLVotingFrame.SetCellNote(rowFrame, frame, data, cols, row, realrow, co
 end
 
 function SLVotingFrame.SetCellRoll(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
-	frame.text:SetText(lootTable[session].candidates[name].roll)
-	data[realrow].cols[column].value = lootTable[session].candidates[name].roll
+        local name = data[realrow].name
+        local c = lootTable[session].candidates[name]
+        frame.text:SetText(c.roll)
+        data[realrow].cols[column].value = c.roll
+        frame:SetScript("OnEnter", function()
+                local base = c.baseRoll or c.roll
+                local sp = c.sp or 0
+                local dp = c.dp or 0
+                addon:CreateTooltip(string.format("Final Roll = Base Roll (%d) + SP (%d) - DP (%d) = %d", base, sp, dp, c.roll))
+        end)
+        frame:SetScript("OnLeave", addon.HideTooltip)
 end
 
 function SLVotingFrame.filterFunc(table, row)
