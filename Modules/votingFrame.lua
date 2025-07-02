@@ -309,9 +309,11 @@ function RCVotingFrame:Update()
 			self.frame.abortBtn:SetText(L["Close"])
 		end
 		self.frame.disenchant:Show()
+                if self.frame.raidReward then self.frame.raidReward:Show() end
 	else -- Non-MLs:
 		self.frame.abortBtn:SetText(L["Close"])
 		self.frame.disenchant:Hide()
+                if self.frame.raidReward then self.frame.raidReward:Hide() end
 	end
 end
 
@@ -603,6 +605,12 @@ function RCVotingFrame:GetFrame()
 	--b4:SetNormalTexture("Interface\\Icons\\INV_Enchant_Disenchant")
 --	b4:Hide() -- hidden by default
 	f.disenchant = b4
+        -- Raid Day Reward button
+        local b5 = addon:CreateButton(L["Raid Day Reward"], f.content)
+        b5:SetPoint("RIGHT", b4, "LEFT", -10, 0)
+        b5:SetScript("OnClick", RaidDayReward)
+        f.raidReward = b5
+        if not addon.isMasterLooter then b5:Hide() end
 
 	-- Number of votes
 	local rf = CreateFrame("Frame", nil, f.content)
