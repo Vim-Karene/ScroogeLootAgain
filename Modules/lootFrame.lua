@@ -180,14 +180,29 @@ function LootFrame:Update()
 end
 
 function LootFrame:OnRoll(entry, button)
-	addon:Debug("LootFrame:OnRoll", entry, button, "Response:", addon:GetResponseText(button))
-	local index = entries[entry].realID
-	
-	addon:SendCommand("group", "response", addon:CreateResponse(items[index].session, items[index].link, items[index].ilvl, button, items[index].equipLoc, items[index].note))
+    addon:Debug("LootFrame:OnRoll", entry, button, "Response:", addon:GetResponseText(button))
+    local index = entries[entry].realID
 
-	numRolled = numRolled + 1
-	items[index].rolled = true
-	self:Update()
+    -- Generate a random roll when the player selects a response
+    local roll = math.random(100)
+
+    addon:SendCommand(
+        "group",
+        "response",
+        addon:CreateResponse(
+            items[index].session,
+            items[index].link,
+            items[index].ilvl,
+            button,
+            items[index].equipLoc,
+            items[index].note,
+            roll
+        )
+    )
+
+    numRolled = numRolled + 1
+    items[index].rolled = true
+    self:Update()
 end
 
 function LootFrame:GetFrame()
