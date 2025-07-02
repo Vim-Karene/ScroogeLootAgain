@@ -3,10 +3,6 @@
 
 PlayerData = PlayerData or {}
 
-local function updateAttendance(data)
-    data.attendance = math.floor((data.attended / math.max(data.attended + data.absent, 1)) * 100)
-end
-
 function AddOrUpdatePlayer(name, class, raiderrank)
     local p = PlayerData[name]
     if not p then
@@ -33,6 +29,11 @@ function AddOrUpdatePlayer(name, class, raiderrank)
     end
     updateAttendance(p)
     return p
+end
+
+function updateAttendance(p)
+    local total = math.max(p.attended + p.absent, 1)
+    p.attendance = math.floor((p.attended / total) * 100)
 end
 
 function IsPlayerInRaid(name)
