@@ -652,7 +652,7 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
 								if self:AutoPassCheck(v.subType, v.equipLoc, v.link) then
 									self:Debug("Autopassed on: ", v.link)
 									if not db.silentAutoPass then self:Print(format(L["Autopassed on 'item'"], v.link)) end
-									self:SendCommand("group", "response", self:CreateResponse(ses, v.link, v.ilvl, "AUTOPASS", v.equipLoc))
+                                                                        self:SendCommand("group", "response", self:CreateResponse(ses, v.link, v.ilvl, "AUTOPASS", v.equipLoc, nil, nil, nil, nil, nil))
 									lootTable[ses].autopass = true
 								end
 							else
@@ -1118,8 +1118,8 @@ end
 -- @param equipLoc	The item in the session's equipLoc
 -- @param note			The player's note
 -- @returns A formatted table that can be passed directly to :SendCommand("group", "response", -return-)
-function ScroogeLoot:CreateResponse(session, link, ilvl, response, equipLoc, note, roll)
-    self:DebugLog("CreateResponse", session, link, ilvl, response, equipLoc, note, roll)
+function ScroogeLoot:CreateResponse(session, link, ilvl, response, equipLoc, note, roll, sp, dp, baseRoll)
+    self:DebugLog("CreateResponse", session, link, ilvl, response, equipLoc, note, roll, sp, dp, baseRoll)
 	local g1, g2 = self:GetPlayersGear(link, equipLoc)
 	local diff = nil
 	if g1 then 
@@ -1150,8 +1150,11 @@ function ScroogeLoot:CreateResponse(session, link, ilvl, response, equipLoc, not
 			diff = diff,
 			note = note,
 			response = response,
-			roll = roll
-		}
+			roll = roll,
+                        sp = sp,
+                        dp = dp,
+                        baseRoll = baseRoll
+                }
 end
 
 function ScroogeLoot:GetPlayersGuildRank()
@@ -1270,6 +1273,11 @@ function ScroogeLoot:OnEvent(event, ...)
                        self:GetGuildOptions() -- get the guild data to the options table now that it's ready
                end
        end
+end
+
+function ScroogeLoot:CanUseItem(playerName, itemLink)
+       -- Simple placeholder; assumes local player can always use the item
+       return true
 end
 
 function ScroogeLoot:OnGroupRosterUpdate()

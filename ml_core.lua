@@ -678,6 +678,19 @@ function ScroogeLootML:TrackAndLogLoot(name, item, response, boss, votes, itemRe
 	history_table["class"]			= self.candidates[name].class											-- New in v2.0
 	history_table["isAwardReason"] = reason and true or false											-- New in v2.0
 
+        if PlayerData and PlayerData[name] then
+                local itemName = GetItemInfo(item)
+                if itemName then
+                        PlayerData[name].itemHistory = PlayerData[name].itemHistory or {}
+                        PlayerData[name].itemHistory[itemName] = true
+                end
+                if response == 1 then
+                        PlayerData[name].SP = 0
+                elseif response == 3 then
+                        PlayerData[name].DP = (PlayerData[name].DP or 0) - 50
+                end
+        end
+
 	if db.sendHistory then -- Send it, and let comms handle the logging
 		addon:SendCommand("group", "history", name, history_table)
 	elseif db.enableHistory then -- Just log it

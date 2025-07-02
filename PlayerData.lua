@@ -7,29 +7,25 @@ local function updateAttendance(data)
     data.attendance = math.floor((data.attended / math.max(data.attended + data.absent, 1)) * 100)
 end
 
-function AddOrUpdatePlayer(name, class, raiderrank)
+function AddOrUpdatePlayer(name, class, isRaider)
     local p = PlayerData[name]
     if not p then
         p = {
             name = name,
             class = class,
-            raiderrank = raiderrank or false,
+            isRaider = isRaider or false,
             SP = 0,
             DP = 0,
+            tokenItems = {},
+            itemHistory = {},
             attended = 0,
             absent = 0,
             attendance = 0,
-            item1 = "",
-            item1received = false,
-            item2 = "",
-            item2received = false,
-            item3 = "",
-            item3received = false,
         }
         PlayerData[name] = p
     else
         p.class = class or p.class
-        if raiderrank ~= nil then p.raiderrank = raiderrank end
+        if isRaider ~= nil then p.isRaider = isRaider end
     end
     updateAttendance(p)
     return p
