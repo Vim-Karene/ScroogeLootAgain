@@ -4,6 +4,7 @@
 PlayerData = PlayerData or {}
 
 local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
+local AceSerializer = LibStub("AceSerializer-3.0")
 
 function CanEditPlayerData()
     return addon.isMasterLooter
