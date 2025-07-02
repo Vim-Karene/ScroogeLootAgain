@@ -3,6 +3,12 @@
 
 PlayerData = PlayerData or {}
 
+local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
+
+function CanEditPlayerData()
+    return addon.isMasterLooter
+end
+
 function AddOrUpdatePlayer(name, class, raiderrank)
     local p = PlayerData[name]
     if not p then
@@ -46,6 +52,7 @@ function IsPlayerInRaid(name)
 end
 
 function RaidDayReward()
+    if not CanEditPlayerData() then return end
     for name, data in pairs(PlayerData) do
         if IsPlayerInRaid(name) then
             data.SP = (data.SP or 0) + 5
@@ -55,14 +62,13 @@ function RaidDayReward()
         end
         updateAttendance(data)
     end
+    BroadcastPlayerData()
 end
 
 function BroadcastPlayerData()
-    if UnitIsGroupLeader("player") or IsMasterLooter() then
-        if AceSerializer then
-            local serialized = AceSerializer:Serialize(PlayerData)
-            SendAddonMessage("PlayerDataUpdate", serialized, "RAID")
-        end
+    if CanEditPlayerData() and AceSerializer then
+        local serialized = AceSerializer:Serialize(PlayerData)
+        SendAddonMessage("PlayerDataUpdate", serialized, "RAID")
     end
 end
 

@@ -1264,6 +1264,7 @@ function RCLootCouncil:OnEvent(event, ...)
 end
 
 function RCLootCouncil:OnGroupRosterUpdate()
+       if not CanEditPlayerData() then return end
        local num = GetNumGroupMembers() or 0
        for i = 1, num do
                local name, _, _, _, class = GetRaidRosterInfo(i)
@@ -1271,6 +1272,7 @@ function RCLootCouncil:OnGroupRosterUpdate()
                        AddOrUpdatePlayer(name, class)
                end
        end
+       BroadcastPlayerData()
 end
 
 function RCLootCouncil:NewMLCheck()
